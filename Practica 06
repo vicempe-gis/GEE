@@ -1,0 +1,73 @@
+//Exportación de gráficos e imágenes
+
+//Paso numero 1
+
+// Importar la colección de imágenes TOA de Landsat 8.
+var l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA');
+
+// Asigne una función sobre la colección TOA de Landsat 8 para agregar una banda NDVI.
+var withNDVI = l8.map(function(image) {
+  var ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI');
+  return image.addBands(ndvi);
+});
+
+//Paso numero 2 
+//crear la zona de estudio con alguna geometria y asignarle el nombre de "roi" y se imprime 
+
+// crear un gráfico.
+var chart = ui.Chart.image.series({
+    imageCollection: withNDVI.select('NDVI'),
+    region: roi,
+    reducer: ee.Reducer.first(),
+    scale: 30
+  }).setOptions({title: 'NDVI over time'});
+  
+  //Mostrar el gráfico en la consola .
+  print(chart);
+
+
+//Paso numero 3
+/*Algo que puede haber notado en este gráfico es que la serie de tiempo de los valores NDVI 
+en el punto parece un poco ruidosa. Esto es probablemente debido a las nubes. Para mejorar este efecto, 
+Earth Engine incluye un algoritmo de enmascaramiento de nubes para sensores Landsat con una banda térmica:*/
+
+  var cloudlessNDVI = l8.map(function(image) {
+    //Obtenga una puntuación de nube en  [0, 100].
+    var cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud');
+  
+    // Cree una máscara de píxeles nublados a partir de un umbral arbitrario.
+    var mask = cloud.lte(20);
+  
+    // Calcular NDVI.
+    var ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI');
+  
+    //Devuelve la imagen enmascarada con una banda NDVI .
+    return image.addBands(ndvi).updateMask(mask);
+  });
+  
+  print(ui.Chart.image.series({
+    imageCollection: cloudlessNDVI.select('NDVI'),
+    region: roi,
+    reducer: ee.Reducer.first(),
+    scale: 30
+  }).setOptions({title: 'Cloud-masked NDVI over time'}));
+
+
+        //Paso numero 4 Exportación de imágenes
+
+  //Si necesitan exportar la información que se genero se realizaria de esta manera
+
+  var greenest = cloudlessNDVI.qualityMosaic('NDVI');
+
+  //Cree un compuesto IR en color de 3 bandas y 8 bits para exportar .
+var visualization = greenest.visualize({
+    bands: ['B5', 'B4', 'B3'],
+    max: 0.4
+  });
+  
+  //Cree una tarea que pueda iniciar desde la pestaña Tareas .
+  Export.image.toDrive({
+    image: visualization,
+    description: 'Greenest_pixel_composite',
+    scale: 30
+  });
