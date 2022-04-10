@@ -1,0 +1,16 @@
+//Visualización de Landsat9
+
+var Landsat9 = ee.ImageCollection ('LANDSAT/LC09/C02/T1_L2')
+.filterDate ('2022-01-01', '2022-04-10')
+.filterMetadata ('CLOUD_COVER', 'Less_Than', 30);
+
+var LansdatTile = ee.Image('LANDSAT/LC09/C02/T1_L2/LC09_007052_20220124')
+print (LansdatTile);
+
+
+Map.addLayer (Landsat9, {
+    min: 5000,
+    max: 50000,
+    gamma: 1.0,
+    bands:['SR_B4','SR_B3','SR_B2']
+},'Mosaico Landsat 9');
