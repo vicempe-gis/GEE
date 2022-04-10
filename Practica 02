@@ -1,0 +1,25 @@
+//Visualización de imágenes y bandas de imágenes
+// Crea una instancia de una imagen con el constructor de imágenes.
+var image = ee.Image('CGIAR/SRTM90_V4');
+
+// Zoom a la locación del Municipio de Salinas.
+// Se incluye primero el valor de la longitud posteriormente el valor de la latitud y el nivel de zoom
+Map.setCenter(-66.2885, 17.9892, 12); // Centro del Municipio de Salinas.
+
+// Mostrar la imagen en el mapa .
+Map.addLayer(image);
+
+/////Imprimir la información de la imágen en la consola
+
+print('SRTM image', image);
+
+//Personalización de la visualización de capas
+
+Map.addLayer(image, {min: 0, max: 3000}, 'custom visualization');
+
+//Incluir paleta de colores
+
+Map.addLayer(image, {min: 0, max: 3000, palette: ['blue', 'green', 'red']},
+    'custom palette');
+
+//Practicar los tipos de paletas: https://en.wikipedia.org/wiki/Web_colors
