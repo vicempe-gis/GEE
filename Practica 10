@@ -1,0 +1,68 @@
+
+//Calculo del NDVI a partir de imágenes satelitales de fechas determinadas de escenas completas de Sentinel-2 en Google Earth Engine
+
+//Importe imágenes de Sentinel-2 dentro de su área de estudio
+
+//Importar la zona de estudio ANP Bosque de la Primavera
+
+//Importe todas las imágenes disponibles de reflectancia de superficie de Sentinel 2 como una ee.ImageCollection:
+
+var S2_SR = ee.ImageCollection('COPERNICUS/S2_SR');
+
+/*Con las herramientas de dibujo en la parte superior izquierda del mapa, dibuje un punto o un rectángulo que represente su área de estudio. 
+Presione 'Salir' cuando haya terminado su dibujo, o seleccione una forma y presione 'eliminar' para eliminarla. Esta forma se llamará automáticamente 'geometría'.*/
+
+//Modifique su primera línea para filtrar la colección de imágenes solo a su área de estudio.
+
+var S2_SR = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(geometry);
+
+//Centre su mapa en su área de estudio.
+
+Map.centerObject(geometry);
+
+//Opcional: si desea filtrar las imágenes capturadas entre dos fechas, use la función filterDate() que se muestra a continuación, con fechas formateadas como 'aaaa-mm-dd'.
+
+var S2_SR = ee.ImageCollection('COPERNICUS/S2_SR').filterBounds(geometry).filterDate('2022-03-15', '2022-03-30');
+
+                      //Calcule el NDVI a partir de las imágenes de Sentinel-2
+
+/*Cree una función que agregue una banda NDVI a una imagen de Sentinel-2. 
+El NDVI se calcula como la diferencia normalizada entre la banda del infrarrojo cercano y la banda roja, que corresponden a la octava y la cuarta banda en las imágenes de Sentinel-2.*/
+
+var addNDVI = function(image) {
+    var ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI');
+    return image.addBands(ndvi);
+  };
+
+/*Aplique esta función en su colección de imágenes usando la función 'mapa' para agregar NDVI como una banda a cada imagen y guardarla como una nueva colección de imágenes.*/
+
+var S2_NDVI = S2_SR.map(addNDVI);
+
+/*Seleccione la imagen más reciente
+
+Ordene la colección de imágenes por fecha y seleccione la imagen más reciente para guardarla como una nueva variable.*/
+
+var recent_S2 = ee.Image(S2_NDVI.sort('system:time_start', false).first());
+
+//Imprima los metadatos de la imagen en la consola para ver sus metadatos, incluida la fecha en que se capturó.
+
+print('Recent image: ', recent_S2);
+
+/*Agregue la imagen NDVI más reciente al mapa
+
+Cree una variable con el esquema/paleta de colores NDVI.*/
+
+var NDVIpalette = ['FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901', '66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01', '012E01', '011D01', '011301'];
+
+//Seleccione solo la banda NDVI y agregue la imagen NDVI al mapa usando el esquema de color NDVI. Nombre la capa 'NDVI reciente' para la leyenda del mapa.
+
+Map.addLayer(recent_S2.select('NDVI'), {palette: NDVIpalette}, 'Recent Sentinel NDVI');
+
+/*Presione el botón 'Ejecutar' para ver la imagen NDVI resultante que se muestra en el Mapa y para ver los metadatos de la imagen que ahora se imprimen en la Consola (lado derecho de la pantalla). 
+Para ver el mapa con mayor claridad, marque la forma que dibujó pasando el cursor sobre la barra Importaciones de geometría y desmarcando la casilla junto a "geometría".*/
+
+
+//Calcule una imagen compuesta mediana de NDVI de varios días utilizando las diez imágenes más recientes.
+var ten_day_S2 = S2_NDVI.sort('system:time_start', false).limit (10);
+print('Recent images: ', ten_day_S2);
+Map.addLayer(ten_day_S2.select('NDVI').median(), {palette: NDVIpalette}, '10 Day Median Sentinel NDVI');
