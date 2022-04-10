@@ -1,0 +1,143 @@
+//Objetivo: Formular un estudio de teledetección empleando GEE, con el objetivo de idenficar zonas afectadas por incendios empleando la combinación de bandas RGB utilizando el satelite Sentinel2 
+
+            //Combinación de Bandas 
+            //Color natural: Sentinel 2B (4,3,2)
+            //Falso color (para zonas urbanas): Sentinel 2B (12,11,4)
+            //Infrarrojo (para vegetación): Sentinel 2B (8,4,3)
+            //Agricultura: Sentinel 2B (11,8A,2)
+            //Penetración de radiación en atmósfera: Sentinel 2B (12,11,8A)
+            //Usos del suelo/masas de agua: Sentinel 2B (8A,11,4)
+            //Infrarrojo de onda corta: Sentinel 2B (12,8A,4)
+            //Análisis de vegetación: Sentinel 2B (11,8A,4)
+            //Análisis de vegetación sana: Sentinel 2B (8A,11,2)
+            /*La combinación de imágenes satélite nos permiten analizar elementos de específicos de la superficie terrestre en función de su espectro de emisión. 
+            Gracias a las distintas bandas multiespectrales de operación de los satélites podemos interpretar aspectos como la vegetación, los usos del suelo o las masas de agua. 
+            Combinaciones específicas RGB nos mostrarán y discriminarán los elementos de nuestras imágenes satélite de forma rápida.*/
+
+
+//Paso Numero 1
+//Importar a GEE el poligono del área natural protegida bosque de la primavera, (importante, para la importación de los archivos deben de ser .zip)
+
+//Una vez importado el archivo .shp vamos a visualizarlo con el siguiente codigo
+//Es importante que al archivo se le indique a la variable el valor de "geometry", podemos jugar con los colores de representación
+
+        // Importar y representar shapefiles en Google Earth Engine
+        // Representamos los datos del vector
+        Map.addLayer(geometry.draw ({color: 'black'}), {}, 'Li­mites AOI');
+
+        // Parametrizamos y representamos el relleno, grosor, color y transparencia
+        var RellenoAOI = ee.Image().byte();
+        var LimiteAOI = RellenoAOI.paint({featureCollection: geometry, width: 5,});
+
+        Map.addLayer(LimiteAOI, {palette: 'red', opacity: 0.5}, 'Bordes AOI');
+
+
+        //Centrar el objeto
+        Map.centerObject(geometry, 12)
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Importar un mapa de fondo para representación
+
+        //Establezca un estilo de mapa base personalizado y predetermina el tipo de mapa satelital .
+var styles = {
+  'Soft Blue': [
+    {
+      featureType: 'all',
+      stylers: [
+        { saturation: -80 }
+      ]
+    },{
+      featureType: 'road.arterial',
+      elementType: 'geometry',
+      stylers: [
+        { hue: '#00ffee' },
+        { saturation: 50 }
+      ]
+    },{
+      featureType: 'poi.business',
+      elementType: 'labels',
+      stylers: [
+        { visibility: 'off' }
+      ]
+    }
+  ]
+};
+
+Map.setOptions('satellite', styles);
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+  //Imagen para SENTINEL 2
+  //Mandar llamar la colección de Imagenes considerando que la fecha de analisis es: antes del incendio '2021-02-01' - '2021-02-20' despues del incendio '2021-04-01' - '2021-04-15'
+var IMGSentinel= ee.ImageCollection ('COPERNICUS/S2') 
+//Indicar los rangos de fechas de interes 
+.filterDate ('2021-02-01', '2021-02-20') //fechas disponibles ('2015-07-01' - actualidad)
+.filterBounds (geometry) 
+.filterMetadata ('CLOUDY_PIXEL_PERCENTAGE', 'Less_Than', 30);
+var SentinelFiltro = ee.Image(IMGSentinel.first());
+var SentinelClip = SentinelFiltro.clip (geometry);
+Map.addLayer (SentinelClip, {
+max: 4000, 
+min: 0.0, 
+gamma: 1.0,
+//indicar las bandas a mostrar
+bands: ['B4','B3','B2']}, 
+'Imagen Sentinel 2');
+//imprimir la imagen
+print (SentinelFiltro);
+//centrar el objeto
+Map.centerObject (geometry, 12);
+                    ////////////////////////////////////////////////////////vamos a obtener el id de la escena para el proximo ejemplo, antes y despues del incendio información que obtendremos de la consola/////////////////////////////////
+
+//Exportar la imagen a drive
+Export.image.toDrive({
+  //Bandas a exportar
+image: SentinelClip.select("B4", "B3", "B2"),
+description: 'Sentinel2_10m',
+scale: 10,
+region: geometry});
+
+//Identificar los valores de inspector para conocer las bandas
+//Fomular visualizaciones de combinación de bandas RGB
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+      //Incluir titulos para presentar imagen 
+// INCORPORAR TITULOS DE MAPA EN GOOGLE EARTH ENGINE
+
+
+//Definir el titulo
+var TituloMapa = ui.Label({
+value: 'Vegetación 8a,11,2', // Titulo del mapa
+style: {position: 'top-center', // Posicion
+fontWeight: 'bold', // Negrita
+fontSize: '15px'}}); // TamaÃ±o de fuente
+
+var Titulo = ui.Label({
+value: 'Rigoberto Moreno', // Titulo del mapa
+style: {position: 'bottom-center', // Posicion
+fontWeight: 'bold', // Negrita
+fontSize: '15px'}}); // TamaÃ±o de fuente
+
+
+//Incorporar el titulo en el visor
+Map.add(TituloMapa); 
+
+Map.add(Titulo);
+
+Map.setCenter (-103.560571,  20.634062, 12);
+
+// Posiciones del Titulo
+//'top-left'
+//'top-center'
+//'top-right'
+//'middle-left'
+//'middle-right'
+//'bottom-left'
+//'bottom-center'
+//'bottom-right'
+
+//jugar con las ubicaciones del dato
+
+//Formular este estudio con imagenes previas y posteriores al incendio
