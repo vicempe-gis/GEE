@@ -1,0 +1,16 @@
+//Primeros ejercicios en java scrip
+// Variables y tipos de datos
+
+var GPS = 'NAVSTAR';
+var geodesia = 'satelites';
+
+print(GPS);
+print(geodesia);
+
+// Esto es un comentario
+
+/*
+
+Esto es un comentario en varias líneas
+
+*/
