@@ -1,0 +1,55 @@
+// Graficar la elevación en puntos de los Volcanes activos de México
+
+
+//Primeramente seleccionar la colección STRM
+var elevation = ee.Image('CGIAR/SRTM90_V4');
+//Incluir los valores de coordenadas (Long-Lat) de los volcanes y sus nombres 
+var waypoints = [
+  ee.Feature(
+      ee.Geometry.Point([-104.732606,   21.444156]),
+      {'name': 'Sangangüey'}),
+  ee.Feature(
+      ee.Geometry.Point([-104.508691, 21.124908]), {'name': 'Ceboruco'}),
+  ee.Feature(
+      ee.Geometry.Point([-103.616886,  19.512212]),
+      {'name': 'Colima'}),
+  ee.Feature(
+      ee.Geometry.Point([-102.251401,  19.493183]), {'name': 'Paricutín'}),
+  ee.Feature(
+      ee.Geometry.Point([-101.717972,  18.972541]), {'name': 'Jorullo'}),
+  ee.Feature(
+      ee.Geometry.Point([-98.627903,  19.022422]), {'name': 'Popocatepetl'}),
+  ee.Feature(
+      ee.Geometry.Point([-97.268076,  19.030382]), {'name': 'Pico de Orizaba'}),
+  ee.Feature(
+      ee.Geometry.Point([-95.199066,  18.562520]), {'name': 'San Martin Tuxtla'}),
+  ee.Feature(
+      ee.Geometry.Point([-93.227778,  17.360000]), {'name': 'El Chichonal'}),
+  ee.Feature(
+      ee.Geometry.Point([-92.108579,  15.132358]), {'name': ' Tacaná'}),
+];
+
+//formulación de la grafica
+var rainierWaypoints = ee.FeatureCollection(waypoints);
+
+var chart = ui.Chart.image.byRegion({
+  image: elevation,
+  regions: rainierWaypoints,
+  scale: 200,
+  xProperty: 'name'
+});
+chart.setOptions({
+  title: 'Elevación de Volcanes Activos en México',
+  vAxis: {
+    title: 'Elevation (meters)'
+  },
+  legend: 'none',
+  lineWidth: 1,
+  pointSize: 4
+});
+
+print(chart);
+
+Map.addLayer(elevation, {min: 500, max: 6000});
+Map.addLayer(rainierWaypoints, {color: 'FF0000'});
+Map.setCenter(-99.76, 19.12, 6);
