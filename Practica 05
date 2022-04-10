@@ -1,0 +1,38 @@
+//NDVI , Mapeo de una función sobre una colección , Mosaico de calidad colección TOA de Landsat 8
+
+//Paso numero 1
+
+// Definir un punto de interés. Utilice las herramientas de dibujo de la interfaz de usuario para importar un punto
+// geometría y asígnele el nombre "point" o establezca las coordenadas del punto con el
+// Función ee.Geometry.Point() como se demuestra aquí.
+var point = ee.Geometry.Point([-122.292, 37.9018]);
+
+// Import the Landsat 8 TOA image collection.
+var l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA');
+
+// Get the least cloudy image in 2015.
+var image = ee.Image(
+  l8.filterBounds(Point)
+    .filterDate('2015-01-01', '2015-12-31')
+    .sort('CLOUD_COVER')
+    .first()
+);
+
+//Paso numero 2
+
+//calcular una imagen del índice de vegetación de diferencia normalizada (NDVI) a partir de la imagen Landsat
+//El cálculo es (NIR - rojo) / (NIR + rojo)
+//Esto da como resultado un número entre 1 y -1, donde los píxeles con actividad fotosintética alta tienen un NDVI alto. Esta es una forma de calcular el NDVI en Earth Engine:
+
+// Calcule el índice de vegetación de diferencia normalizada (NDVI).
+var nir = image.select('B5');
+var red = image.select('B4');
+var ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
+
+// mostrar el resultado.
+Map.centerObject(image, 9);
+var ndviParams = {min: -1, max: 1, palette: ['blue', 'white', 'green']};
+Map.addLayer(ndvi, ndviParams, 'NDVI image');
+
+//Identificar con Inspector el valor del pixel
+
