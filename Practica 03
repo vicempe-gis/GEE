@@ -1,0 +1,48 @@
+//Cálculos utilizando imágenes pendiente del terreno pasando la imagen de elevación SRTM
+//La Misión Topográfica Shuttle Radar (acrónimo en inglés SRTM, de Shuttle Radar Topography Mission)
+
+//Paso numero 1
+
+// Cargue la imagen SRTM.
+var srtm = ee.Image('CGIAR/SRTM90_V4');
+
+// Aplicar un algoritmo a una imagen.
+var slope = ee.Terrain.slope(srtm);
+
+// mostrar el resultado.
+Map.setCenter(-84.702954,  10.461857, 12); // Centro en el Volcán Arenal.
+Map.addLayer(slope, {min: 0, max :60}, 'slope');
+
+//Paso numero 2
+
+//Matemáticas de imagen matemáticas de bandas o álgebra de mapas
+
+// Obtener el aspecto (en grados) .
+var aspect = ee.Terrain.aspect(srtm);
+
+// Convierta a radianes, calcule el seno del aspecto.
+var sinImage = aspect.divide(180).multiply(Math.PI).sin();
+
+//mostrar el resultado .
+Map.addLayer(sinImage, {min: -1, max: 1}, 'sin');
+
+
+//Paso numero 3
+
+//Estadísticas de imagen
+
+//Generar un poligono de interes, cambiar el nombre de la geometria por poligono
+
+//Calcule la elevación media en el polígono .
+var meanDict = srtm.reduceRegion({
+    reducer: ee.Reducer.mean(),
+    geometry: poligono,
+    scale: 90
+  });
+  
+  // Obtenga la media del diccionario e imprímala en la consola.
+  var mean = meanDict.get('elevation');
+  print('Elevation Media', mean);
+
+  
+
