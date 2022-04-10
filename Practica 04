@@ -1,0 +1,50 @@
+//Colecciones de imágenes
+
+//Una colección de imágenes hace referencia a un conjunto de imágenes de Earth Engine. Por ejemplo, la colección de todas las imágenes de Landsat 8 es un archivo ee.ImageCollection
+
+//Paso numero 1
+//Mandar llamar a la colección de imagenes LANDSAT8 TOA
+
+var l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA');
+
+//Filtrado de colecciones de imágenes por escena
+
+//Indicar nuestra zona de interes con la herramienta point, donde se mostrara la escena, considerar cambiar el nombre de la geometria por punto
+
+var spatialFiltered = l8.filterBounds(point);
+print('spatialFiltered', spatialFiltered);
+
+//Indicar la el espacio temporal de interes de la escena
+
+var temporalFiltered = spatialFiltered.filterDate('2015-01-01', '2015-12-31');
+print('temporalFiltered', temporalFiltered);
+
+//En la consola vamos a revisar las escenas que nos sean de interes
+
+//Paso numero 2
+//Vamos a filtrar las colecciones de escenas MENOS NUBLADA
+
+// Esto se ordenará de menos a más nublado.
+var sorted = temporalFiltered.sort('CLOUD_COVER');
+
+// Obtenga la primera imagen (menos nublada).
+var scene = sorted.first();
+
+//Paso numero 3
+//Digresión: visualización de imágenes RGB  Earth Engine elige las primeras tres bandas de la imagen y las muestra en rojo, verde y azul de manera predeterminada, estirándolas según el tipo de dato
+
+Map.centerObject(scene, 9);
+Map.addLayer(scene, {}, 'default RGB');
+
+//Paso numero 4 Visualización en RGB
+var visParams = {bands: ['B4', 'B3', 'B2'], max: 0.3};
+Map.addLayer(scene, visParams, 'true-color composite');
+
+//Paso numero 5 
+//Mostrar colecciones de imágenes
+
+var l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA');
+var landsat2016 = l8.filterDate('2016-01-01', '2016-12-31');
+Map.addLayer(landsat2016, visParams, 'l8 collection');
+
+
