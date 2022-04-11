@@ -1,0 +1,30 @@
+//Considerar la pagina http://colorbrewer2.org
+
+//Reclasificacion de intervalos en Google Earth Engine
+
+
+
+
+var DEM = ee.Image('WWF/HydroSHEDS/03VFDEM') 
+.select('b1'); // Seleccionamos un dataset DEM y la banda de trabajo
+
+// Imprimimos la variable si necesitamos identificar los valores extremos
+print (DEM);
+
+// Realizamos la reclasificacion de intervalos a partir de una nueva variable
+var Clases = DEM  
+          .where(DEM.lte(30), 1) // Menos de 30 metros
+          .where(DEM.gt(300).and(DEM.lte(700)), 2) // Entre 300 y 700 metros
+          .where(DEM.gt(700).and(DEM.lte(1000)), 3)
+          .where(DEM.gt(1000).and(DEM.lte(1500)), 4)
+          .where(DEM.gt(1500).and(DEM.lte(2000)), 5)
+          .where(DEM.gt(2000).and(DEM.lte(3000)), 6)
+          .where(DEM.gt(3000), 7); // Mas de 3000 metros
+
+// Incorporamos un fondo negro para visualizar mejor las clases
+Map.addLayer (ee.Image(0).byte(), {}, "Background");
+
+// Representamos los datos en el visor asignando simbologia y numero de clases
+Map.addLayer(Clases, {min: 1, max :7,
+palette: ['#0034F5', '#1E7D83', '#4DA910', '#B3C120', '#FCC228', '#FF8410', '#FD3000']},
+'Reclasificacion');
