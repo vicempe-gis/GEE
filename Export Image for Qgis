@@ -1,0 +1,66 @@
+//Exportar imagen de GEE para la formulación de analisis y mapas en Qgis
+
+//Crear una variable de tipo geometria (geometry), ya sea por medio de poligono o figura
+
+//Definir las fechas de interes de la imagen
+var start = new Date("12/15/2019");
+var end = new Date("05/30/2020");
+
+/**
+ * Función para enmascarar nubes usando la banda Sentinel-2 QA
+ * @param {ee.Image} image Sentinel-2 imagen
+ * @return {ee.Image} imagen de Sentinel-2 enmascarada en la nube
+ */
+function maskS2clouds(image) {
+  var qa = image.select('QA60');
+
+  // Los bits 10 y 11 son nubes y cirros, respectivamente.
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+
+  // Ambas banderas deben establecerse en cero, lo que indica condiciones claras.
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+      .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+
+  return image.updateMask(mask).divide(10000);
+}
+
+// Mapee la función sobre un año de datos y tome la mediana.
+// Cargar datos de reflectancia TOA de Sentinel-2.
+var S2 = ee.ImageCollection("COPERNICUS/S2_SR")
+  .filterDate(start, end)
+  .filterBounds(geometry)
+// Prefiltro para obtener gránulos menos turbios.
+  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',1))
+  .map(maskS2clouds);
+  
+print(S2);  
+//Tener en cuenta que se mostrara la imagen con las bandas seleccionadas en una composición RGB
+var rgbVis = {
+  min: 0.0,                                                                                                             
+  max: 0.45,
+  bands: ['B4', 'B3', 'B2'],
+};
+
+var S2Filtro = ee.Image(S2.median());
+var S2Clip = S2Filtro.clip (geometry);
+
+print(S2Clip);
+
+//Map.centerObject (S2Clip);
+
+Map.centerObject (geometry, 12);
+Map.addLayer(S2Clip, rgbVis, 'RGB');
+
+//Exportar la imagen a drive ***Tener en cuenta que se exportaran las bandas indicadas***
+Export.image.toDrive({
+    image: S2Clip.select("B2","B3","B4", "B8","B11"),
+  description: 'Sentinel2_10m',
+  scale: 10,
+  maxPixels:1904159825,
+  region: geometry,
+  //Identificar el sistema de proyección de la zona de estudio, debe de ser el mismo para nuestro SIG de escritorio
+  crs: 'EPSG:32613'
+});
+
+
